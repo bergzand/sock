@@ -128,6 +128,16 @@
 #define COAP_OBS_DEREGISTER      (1)
 /** @} */
 
+/**
+ * @name Blockwise transfer (RFC7959
+ * @{
+ */
+#define COAP_BLOCKWISE_NUM_OFF  (4)
+#define COAP_BLOCKWISE_MORE_OFF (3)
+#define COAP_BLOCKWISE_SZX_MASK (0x07)
+#define COAP_BLOCKWISE_SZX_MAX  (7)
+/** @} */
+
 #define COAP_ACK_TIMEOUT        (2U)
 #define COAP_RANDOM_FACTOR      (1.5)
 #define COAP_MAX_RETRANSMIT     (4)
@@ -151,6 +161,8 @@ typedef struct {
     unsigned payload_len;
     uint16_t content_type;
     uint32_t observe_value;
+    uint32_t block2_num;
+    uint32_t block2_size;
 } coap_pkt_t;
 
 typedef ssize_t (*coap_handler_t)(coap_pkt_t* pkt, uint8_t *buf, size_t len);
@@ -166,6 +178,13 @@ typedef struct {
     uint16_t len;
     uint8_t *val;
 } coap_opt_t;
+
+typedef struct {
+    uint32_t start_pos;
+    uint32_t cur_pos;
+    uint16_t end_pos;
+    uint8_t *block_hdr;
+} coap_blockwise_t;
 
 extern const coap_resource_t coap_resources[];
 extern const unsigned coap_resources_numof;
@@ -185,6 +204,7 @@ ssize_t coap_handle_req(coap_pkt_t *pkt, uint8_t *resp_buf, unsigned resp_buf_le
 ssize_t coap_build_hdr(coap_hdr_t *hdr, unsigned type, uint8_t *token, size_t token_len, unsigned code, uint16_t id);
 size_t coap_put_option(uint8_t *buf, uint16_t lastonum, uint16_t onum, uint8_t *odata, size_t olen);
 size_t coap_put_option_ct(uint8_t *buf, uint16_t lastonum, uint16_t content_type);
+size_t coap_put_option_block2(uint8_t *buf, uint16_t lastonum, coap_blockwise_t *blk);
 size_t coap_put_option_uri(uint8_t *buf, uint16_t lastonum, const char *uri, uint16_t optnum);
 
 uint8_t *coap_find_option(uint8_t *payload_pos, uint8_t *bufpos, coap_opt_t *opt, uint16_t optnum);
@@ -280,6 +300,18 @@ static inline void coap_clear_observe(coap_pkt_t *pkt)
 static inline uint32_t coap_get_observe(coap_pkt_t *pkt)
 {
     return pkt->observe_value;
+}
+
+static inline uint8_t coap_blockwise_size2szx(uint16_t size)
+{
+    int szx = -4;
+    do {
+        size >>= 1;
+        szx++;
+    }
+    while (size != 1);
+    assert(!(szx < 0));
+    return (uint8_t)szx;
 }
 
 extern ssize_t coap_well_known_core_default_handler(coap_pkt_t* pkt, \
