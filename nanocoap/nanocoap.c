@@ -108,8 +108,7 @@ int coap_parse(coap_pkt_t *pkt, uint8_t *buf, size_t len)
                         pkt->block2_size = (COAP_BLOCKWISE_SZX_MAX > blk2_size) ?
                             blk2_size :
                             COAP_BLOCKWISE_SZX_MAX;
-                        if (pkt->block2_size > 10)
-                        {
+                        if (pkt->block2_size > 10) {
                             DEBUG("nanocoap: discarding packet with invalid block szx.\n");
                             return -EBADMSG;
                         }
@@ -338,7 +337,8 @@ size_t coap_put_option_ct(uint8_t *buf, uint16_t lastonum, uint16_t content_type
     }
 }
 
-size_t coap_put_option_block2(uint8_t *buf, uint16_t lastonum, coap_blockwise_t *blk)
+size_t coap_put_option_block2(uint8_t *buf, uint16_t lastonum, \
+                              coap_blockwise_t *blk)
 {
     size_t opt_len = 1;
     uint32_t tmp = 0;
@@ -353,22 +353,20 @@ size_t coap_put_option_block2(uint8_t *buf, uint16_t lastonum, coap_blockwise_t 
     }
 
     /* Determine option length */
-    if (num > 0x0f)
-    {
+    if (num > 0x0f) {
         opt_len = 2;
     }
-    else if (num > 0x0fff)
-    {
+    else if (num > 0x0fff) {
         opt_len = 3;
     }
 
     tmp = num << COAP_BLOCKWISE_NUM_OFF;
-    if (blk->cur_pos >= blk->end_pos)
-    {
+    if (blk->cur_pos >= blk->end_pos) {
         tmp |= 1 << COAP_BLOCKWISE_MORE_OFF;
     }
     tmp |= szx;
-    return coap_put_option(blk->block_hdr, lastonum, COAP_OPT_BLOCK2, (uint8_t*)&tmp, opt_len);
+    return coap_put_option(blk->block_hdr, lastonum, COAP_OPT_BLOCK2, 
+                           (uint8_t*)&tmp, opt_len);
 }
 
 size_t coap_put_option_uri(uint8_t *buf, uint16_t lastonum, const char *uri, uint16_t optnum)
@@ -415,10 +413,8 @@ void coap_blockwise_init(coap_pkt_t *pkt, coap_blockwise_t *blk)
 
 size_t coap_blockwise_put_char(uint8_t *bufpos, coap_blockwise_t *blk, char c)
 {
-    if (blk->start_pos <=  blk->cur_pos)
-    {
-        if (blk->cur_pos >= blk->end_pos)
-        {
+    if (blk->start_pos <=  blk->cur_pos) {
+        if (blk->cur_pos >= blk->end_pos) {
             blk->cur_pos++;
             return 0;
         }
@@ -430,7 +426,8 @@ size_t coap_blockwise_put_char(uint8_t *bufpos, coap_blockwise_t *blk, char c)
     return 0;
 }
 
-size_t coap_blockwise_put_string(uint8_t *bufpos, coap_blockwise_t *blk, const char *c, size_t len)
+size_t coap_blockwise_put_string(uint8_t *bufpos, coap_blockwise_t *blk, \
+                                 const char *c, size_t len)
 {
     uint16_t str_offset = 0;
     uint16_t str_len = 0;
@@ -478,7 +475,8 @@ ssize_t coap_well_known_core_default_handler(coap_pkt_t* pkt, uint8_t *buf, \
         }
         unsigned url_len = strlen(coap_resources[i].path);
         bufpos += coap_blockwise_put_char(bufpos, &blk, '<');
-        bufpos += coap_blockwise_put_string(bufpos, &blk, coap_resources[i].path, url_len);
+        bufpos += coap_blockwise_put_string(bufpos, &blk, \
+                                            coap_resources[i].path, url_len);
         bufpos += coap_blockwise_put_char(bufpos, &blk, '>');
     }
 
