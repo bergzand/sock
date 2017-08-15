@@ -413,16 +413,12 @@ void coap_blockwise_init(coap_pkt_t *pkt, coap_blockwise_t *blk)
 
 size_t coap_blockwise_put_char(uint8_t *bufpos, coap_blockwise_t *blk, char c)
 {
-    if (blk->start_pos <=  blk->cur_pos) {
-        if (blk->cur_pos >= blk->end_pos) {
-            blk->cur_pos++;
-            return 0;
-        }
+    blk->cur_pos++;
+    /* Only copy the char if it is within the window */
+    if (blk->start_pos <=  blk->cur_pos && blk->cur_pos < blk->end_pos) {
         *bufpos = c;
-        blk->cur_pos++;
         return 1;
     }
-    blk->cur_pos++;
     return 0;
 }
 
