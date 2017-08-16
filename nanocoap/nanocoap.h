@@ -204,6 +204,12 @@ size_t coap_put_option_ct(uint8_t *buf, uint16_t lastonum, uint16_t content_type
 size_t coap_put_option_block2(uint8_t *buf, uint16_t lastonum, coap_blockwise_t *blk);
 size_t coap_put_option_uri(uint8_t *buf, uint16_t lastonum, const char *uri, uint16_t optnum);
 
+void coap_blockwise_init(coap_pkt_t *pkt, coap_blockwise_t *blk);
+void coap_finish_option_block2(coap_blockwise_t *blk, uint8_t *options_pos, uint8_t *body_pos);
+
+size_t coap_blockwise_put_char(coap_blockwise_t *blk, uint8_t *bufpos, char c);
+size_t coap_blockwise_put_string(coap_blockwise_t *blk, uint8_t *bufpos, const char *c, size_t len);
+
 uint8_t *coap_find_option(uint8_t *payload_pos, uint8_t *bufpos, coap_opt_t *opt, uint16_t optnum);
 
 static inline unsigned coap_get_ver(coap_pkt_t *pkt)
