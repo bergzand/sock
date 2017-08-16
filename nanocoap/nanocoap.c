@@ -392,11 +392,14 @@ size_t coap_put_option_uri(uint8_t *buf, uint16_t lastonum, const char *uri, uin
 void coap_blockwise_init(coap_pkt_t *pkt, coap_blockwise_t *blk)
 {
     coap_opt_t opt;
-    coap_find_option(pkt->payload, pkt->options, &opt, COAP_OPT_BLOCK2);
-
-    uint32_t blk2_opt = _decode_uint(opt.val, opt.len);
-    uint32_t blk2_num = blk2_opt >> COAP_BLOCKWISE_NUM_OFF;
-    uint8_t blk2_size = (blk2_opt & COAP_BLOCKWISE_SZX_MASK) + 4;
+    uint32_t blk2_num = 0;
+    uint8_t blk2_size = COAP_BLOCKWISE_SZX_MAX;
+    if(coap_find_option(pkt->payload, pkt->options, &opt, COAP_OPT_BLOCK2)) {
+        uint32_t blk2_opt = _decode_uint(opt.val, opt.len);
+        blk2_num = blk2_opt >> COAP_BLOCKWISE_NUM_OFF;
+        blk2_size = (blk2_opt & COAP_BLOCKWISE_SZX_MASK) + 4;
+        DEBUG("nanocoap: block2 header found: num: %u, szx %u\n", blk2_num, blk2_size);
+    }
     /* Use the smallest block size */
     blk2_size = (COAP_BLOCKWISE_SZX_MAX > blk2_size) ?
         blk2_size :
@@ -411,7 +414,7 @@ void coap_finish_option_block2(coap_blockwise_t *blk, uint8_t *options_pos, uint
     coap_opt_t opt;
     uint8_t *hdr_pos = coap_find_option(body_pos, options_pos, &opt, COAP_OPT_BLOCK2);
     if (hdr_pos == NULL) {
-        DEBUG("nanocoap: No block2 header found, unable to adjust more flag");
+        DEBUG("nanocoap: No block2 header found, unable to adjust more flag\n");
         return;
     }
     if (blk->cur_pos >= blk->end_pos) {
