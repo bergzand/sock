@@ -161,8 +161,6 @@ typedef struct {
     unsigned payload_len;
     uint16_t content_type;
     uint32_t observe_value;
-    uint32_t block2_num;
-    uint32_t block2_size;
 } coap_pkt_t;
 
 typedef ssize_t (*coap_handler_t)(coap_pkt_t* pkt, uint8_t *buf, size_t len);
@@ -183,7 +181,6 @@ typedef struct {
     uint32_t start_pos;
     uint32_t cur_pos;
     uint16_t end_pos;
-    uint8_t *block_hdr;
 } coap_blockwise_t;
 
 extern const coap_resource_t coap_resources[];
