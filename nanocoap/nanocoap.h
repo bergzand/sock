@@ -180,7 +180,7 @@ typedef struct {
 typedef struct {
     uint32_t start_pos;
     uint32_t cur_pos;
-    uint16_t end_pos;
+    uint32_t end_pos;
 } coap_blockwise_t;
 
 extern const coap_resource_t coap_resources[];

@@ -336,21 +336,22 @@ size_t coap_put_option_block2(uint8_t *buf, uint16_t lastonum, \
 {
     size_t opt_len = 1;
     uint32_t tmp = 0;
+    uint32_t opt_val;
 
     /* Calculate size exponent */
     uint8_t szx = coap_blockwise_size2szx(blk->end_pos - blk->start_pos);
-    uint16_t num = blk->start_pos/(blk->end_pos - blk->start_pos);
-
+    uint32_t num = blk->start_pos/(blk->end_pos - blk->start_pos);
     /* Determine option length */
-    if (num > 0x0f) {
-        opt_len = 2;
-    }
-    else if (num > 0x0fff) {
+    if (num > 0x0fff) {
         opt_len = 3;
     }
-
+    else if (num > 0x0f) {
+        opt_len = 2;
+    }
     tmp = num << COAP_BLOCKWISE_NUM_OFF;
     tmp |= szx;
+    tmp = htonl(tmp);
+    tmp >>= 8 * (4 - opt_len);
     return coap_put_option(buf, lastonum, COAP_OPT_BLOCK2,
                            (uint8_t*)&tmp, opt_len);
 }
@@ -398,7 +399,6 @@ void coap_blockwise_init(coap_pkt_t *pkt, coap_blockwise_t *blk)
         uint32_t blk2_opt = _decode_uint(opt.val, opt.len);
         blk2_num = blk2_opt >> COAP_BLOCKWISE_NUM_OFF;
         blk2_size = (blk2_opt & COAP_BLOCKWISE_SZX_MASK) + 4;
-        DEBUG("nanocoap: block2 header found: num: %u, szx %u\n", blk2_num, blk2_size);
     }
     /* Use the smallest block size */
     blk2_size = (COAP_BLOCKWISE_SZX_MAX > blk2_size) ?
@@ -425,20 +425,21 @@ void coap_finish_option_block2(coap_blockwise_t *blk, uint8_t *options_pos, uint
 
 size_t coap_blockwise_put_char(coap_blockwise_t *blk, uint8_t *bufpos, char c)
 {
-    blk->cur_pos++;
     /* Only copy the char if it is within the window */
     if (blk->start_pos <=  blk->cur_pos && blk->cur_pos < blk->end_pos) {
         *bufpos = c;
+        blk->cur_pos++;
         return 1;
     }
+    blk->cur_pos++;
     return 0;
 }
 
 size_t coap_blockwise_put_string(coap_blockwise_t *blk, uint8_t *bufpos, \
                                  const char *c, size_t len)
 {
-    uint16_t str_offset = 0;
-    uint16_t str_len = 0;
+    uint32_t str_offset = 0;
+    uint32_t str_len = 0;
     /* Calculate offset inside the string that is in the window */
     if (blk->start_pos > blk->cur_pos) {
         str_offset = blk->start_pos - blk->cur_pos;
@@ -457,8 +458,8 @@ size_t coap_blockwise_put_string(coap_blockwise_t *blk, uint8_t *bufpos, \
 
     str_len = len - str_offset;
     /* Check if string is over the end of the window */
-    if (blk->cur_pos + len - str_offset >= blk->end_pos) {
-        str_len = blk->end_pos - blk->cur_pos;
+    if (blk->cur_pos + len >= blk->end_pos) {
+        str_len = blk->end_pos - blk->cur_pos - str_offset;
     }
     memcpy(bufpos, c + str_offset, str_len);
     blk->cur_pos += len;
